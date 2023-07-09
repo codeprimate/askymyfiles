@@ -1,0 +1,18 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AskMyFiles	./askmyfiles.py	/^class AskMyFiles:$/;"	c
+__init__	./askmyfiles.py	/^    def __init__(self, filename=None):$/;"	m	class:AskMyFiles
+ask	./askmyfiles.py	/^    def ask(self, query):$/;"	m	class:AskMyFiles
+file_info	./askmyfiles.py	/^    def file_info(self,filename):$/;"	m	class:AskMyFiles
+get_file_list	./askmyfiles.py	/^    def get_file_list(self):$/;"	m	class:AskMyFiles
+join_strings	./askmyfiles.py	/^    def join_strings(self,lst):$/;"	m	class:AskMyFiles
+list_files	./askmyfiles.py	/^    def list_files(self):$/;"	m	class:AskMyFiles
+load_db	./askmyfiles.py	/^    def load_db(self):$/;"	m	class:AskMyFiles
+load_files	./askmyfiles.py	/^    def load_files(self):$/;"	m	class:AskMyFiles
+query_db	./askmyfiles.py	/^    def query_db(self, string, max_chars=None):$/;"	m	class:AskMyFiles
+remove_file	./askmyfiles.py	/^    def remove_file(self,file_name):$/;"	m	class:AskMyFiles
+reset_db	./askmyfiles.py	/^    def reset_db(self):$/;"	m	class:AskMyFiles

@@ -1,0 +1,5 @@
+chromadb
+langchain[llms]
+openai
+pypdf
+venv
