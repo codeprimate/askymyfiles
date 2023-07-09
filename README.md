@@ -26,11 +26,13 @@ chmod u+x ~/bin/askmyfiles
 
 Always run askmyfiles at the root of your project folder!!!
 
-To add a directory or file to the local database, use the following command:
+askmyfiles looks for new and updated information
+
+Adding a file can take a long time
+
+To add a directory or file to the local database, then "add":
 
 ```
-# askmyfiles looks for new and updated information
-# Adding a file can take a long time
 ~/bin/askymyfiles add the/path/to/file.txt
 ~/bin/askymyfiles add /really/the/path/to/file.txt
 ~/bin/askymyfiles add the/path/
@@ -41,13 +43,13 @@ touch the/path/to/file.txt
 ~/bin/askymyfiles add the/path/to/file.txt
 ```
 
-To ask a question using the gpt-3.5-turbo-16k model, use the following command:
+To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 
 ```
-askmyfiles ask "Your question."
+~/bin/askmyfiles ask "Your question."
 ```
 
-To remove a file from the database, use the following command:
+To remove a file from the database, then "remove":
 
 ```
 # Specify a single file to remove 
@@ -56,7 +58,7 @@ To remove a file from the database, use the following command:
 ~/bin/askymyfiles remove /really/the/path/to/file.txt
 ```
 
-Once the file is loaded into the database, you don't NEED it anymore.
+Once the file is loaded into the database, you don't NEED it in the project directory anymore.
 
 Please note that the app will only return the code snippet relevant to your question and nothing else.
 API usage fees will apply.
