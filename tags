@@ -10,9 +10,14 @@ ask	./askmyfiles.py	/^    def ask(self, query):$/;"	m	class:AskMyFiles
 file_info	./askmyfiles.py	/^    def file_info(self,filename):$/;"	m	class:AskMyFiles
 get_file_list	./askmyfiles.py	/^    def get_file_list(self):$/;"	m	class:AskMyFiles
 join_strings	./askmyfiles.py	/^    def join_strings(self,lst):$/;"	m	class:AskMyFiles
-list_files	./askmyfiles.py	/^    def list_files(self):$/;"	m	class:AskMyFiles
 load_db	./askmyfiles.py	/^    def load_db(self):$/;"	m	class:AskMyFiles
 load_files	./askmyfiles.py	/^    def load_files(self):$/;"	m	class:AskMyFiles
+persist_db	./askmyfiles.py	/^    def persist_db(self):$/;"	m	class:AskMyFiles
+process_file	./askmyfiles.py	/^    def process_file(self,file_path):$/;"	m	class:AskMyFiles
 query_db	./askmyfiles.py	/^    def query_db(self, string, max_chars=None):$/;"	m	class:AskMyFiles
+read_file	./askmyfiles.py	/^    def read_file(self, file_path):$/;"	m	class:AskMyFiles
 remove_file	./askmyfiles.py	/^    def remove_file(self,file_name):$/;"	m	class:AskMyFiles
 reset_db	./askmyfiles.py	/^    def reset_db(self):$/;"	m	class:AskMyFiles
+vectorize_chunk	./askmyfiles.py	/^    def vectorize_chunk(self, chunk, metadata, index):$/;"	m	class:AskMyFiles
+vectorize_chunks	./askmyfiles.py	/^    def vectorize_chunks(self, chunks, metadata):$/;"	m	class:AskMyFiles
+vectorize_text	./askmyfiles.py	/^    def vectorize_text(self, text):$/;"	m	class:AskMyFiles

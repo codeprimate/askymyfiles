@@ -2,25 +2,27 @@
 
 import os
 import re
+import sys
+import time
+import concurrent.futures
 import hashlib
-import langchain
+from itertools import islice
+import chromadb
+from chromadb.config import Settings
 from langchain.chains import LLMChain
 from langchain.chains import SimpleSequentialChain
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import chromadb
-from chromadb.config import Settings
 
 class AskMyFiles:
     def __init__(self, filename=None):
         self.filename = filename
-        self.api_key = os.getenv('OPENAI_API_KEY')
-        self.recurse = False
         self.db_path = os.path.join(os.getcwd(), '.vectordatadb')
+        self.relative_working_path = self.db_path + "/../"
         if filename is None:
             self.working_path = os.getcwd()
         else:
@@ -29,26 +31,32 @@ class AskMyFiles:
                 self.recurse = True
             else:
                 self.working_path = os.path.dirname(os.path.abspath(filename))
+                self.recurse = False
 
-        self.relative_working_path = self.db_path + "/../"
         self.collection_name = "filedata"
         self.chromadb = None
+        self.api_key = os.getenv('OPENAI_API_KEY')
         self.embeddings_model = OpenAIEmbeddings(openai_api_key=self.api_key)
+
+        self.max_tokens = 14000
         self.max_chars = 60000
         self.openai_model = "gpt-3.5-turbo-16k"
+        self.chunk_size = 500
+        self.chunk_overlap = 50
 
     def load_db(self):
         if self.chromadb is None:
             self.chromadb = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=self.db_path))
             self.files_collection = self.chromadb.get_or_create_collection(self.collection_name)
+        if self.files_collection is None:
+            self.files_collection = self.chromadb.get_or_create_collection(self.collection_name)
+
+    def persist_db(self):
+        self.chromadb.persist()
 
     def reset_db(self):
         self.load_db()
         self.chromadb.reset()
-
-    def list_files(self):
-        self.load_db()
-        print(self.files_collection.get(ids=[]))
 
     def file_info(self,filename):
         self.load_db()
@@ -109,66 +117,129 @@ class AskMyFiles:
             return
         found_files = self.files_collection.delete(where={"source": file_name})
         print(f"Removed {file_name} from database.")
-        self.chromadb.persist()
+        self.persist_db()
         return True
 
+    def vectorize_text(self, text):
+        return self.embeddings_model.embed_query(text)
+
+    def vectorize_chunk(self, chunk, metadata, index):
+        embedding = self.vectorize_text(chunk)
+        cid = f"{metadata['file_hash']}-{index}"
+        return {"id": cid, "document": chunk, "embedding": embedding, "metadata": metadata}
+
+    def vectorize_chunks(self, chunks, metadata):
+        max_threads = min(len(chunks), 5)
+        vectorized_chunks = {}
+        # for index in range(1,len(chunks)):
+        #     vectorized_chunks[str(index)] = self.vectorize_chunk(chunks[index-1], metadata, index)
+
+        cindex = 1
+        iterator = iter(chunks)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
+            for chunk_group in zip(*[iterator] * max_threads):
+                starting_index = cindex
+                num_threads = min(max_threads, len(chunk_group))
+                futures = []
+                for thread_index in range(num_threads):
+                    futures.append(executor.submit(self.vectorize_chunk, chunk_group[thread_index], metadata, cindex))
+                    cindex += 1
+                i = 0
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    chunk_index = starting_index + i
+                    vectorized_chunks[f"chunk-{chunk_index}"] = result
+                    print(".",end="",flush=True)
+                    i += 1
+                concurrent.futures.wait(futures)
+
+        return vectorized_chunks
+
+    def read_file(self, file_path):
+        with open(file_path, 'r') as file:
+            try:
+                if os.path.splitext(file_path)[1] == '.pdf':
+                    # PDF Processing
+                    loader = PyPDFLoader(file_path)
+                    pages = loader.load_and_split()
+                    content = []
+                    for page in pages:
+                        content.append(str(page.page_content))
+                    return self.join_strings(content)
+                else:
+                    # Plain Text Processing
+                    return file.read()
+            except Exception as e:
+                print(f"Error reading {file_path}...skipped")
+                return None
+
+    def process_file(self,file_path):
+        self.load_db()
+        start_time = time.time()
+
+        # Get file meta information
+        metadata = {
+            "source": file_path,
+            "file_path": file_path,
+            "file_modified": os.path.getmtime(file_path),
+            "file_hash": hashlib.sha256(file_path.encode()).hexdigest()
+        }
+
+        # File exists?
+        existing_record = self.files_collection.get(where={"file_hash": metadata["file_hash"]})
+        existing = len(existing_record['ids']) != 0 and len(existing_record['metadatas']) != 0
+        if existing:
+            file_updated = existing_record['metadatas'][0]["file_modified"] < metadata["file_modified"]
+        else:
+            file_updated = True
+
+        # Skip File?
+        skip_file = existing and not file_updated
+        if skip_file:
+            print(f"Skipped loading {file_path}")
+            return False
+
+        print(f"Creating File Embeddings for: {file_path}...",end='',flush=True)
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+        content = self.read_file(file_path)
+        chunks = splitter.split_text(content)
+        chunk_count = len(chunks)
+        print(f"[{len(chunks)} chunks]",end='',flush=True)
+
+        vectorized_chunks = self.vectorize_chunks(chunks, metadata)
+        chunk_keys = list(vectorized_chunks.keys())
+        if len(chunk_keys) == 0:
+            print("Processing Error...NO CHUNKS???")
+            return False
+
+        self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
+        group_size = 10
+        batches = [chunk_keys[i:i+group_size] for i in range(0, len(chunk_keys), group_size)]
+        for batch in batches:
+            self.files_collection.add(
+                ids=[vectorized_chunks[cid]['id'] for cid in batch],
+                embeddings=[vectorized_chunks[cid]['embedding'] for cid in batch],
+                documents=[vectorized_chunks[cid]['document'] for cid in batch],
+                metadatas=[vectorized_chunks[cid]['metadata'] for cid in batch]
+            )
+            print("+", end='', flush=True)
+
+        elapsed_time = max(1, int( time.time() - start_time ))
+        print(f"OK [{elapsed_time}s]", flush=True)
+
+        return True
 
     def load_files(self):
         print("Updating AskMyFiles database...")
-        self.load_db()
-
-        chunk_size=500
-        chunk_overlap=50
-        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        saved_files = False
         for file_path in self.get_file_list():
-            with open(file_path, 'r') as file:
-                file_modified = os.path.getmtime(file_path)
-                file_hash = hashlib.sha256(file_path.encode()).hexdigest()
+            saved_files = saved_files or self.process_file(file_path)
 
-                existing_record = self.files_collection.get(where={"filename_hash": file_hash})
-                if ( len(existing_record['ids']) != 0 and len(existing_record['metadatas']) != 0 and existing_record['metadatas'][0]['modified'] >= file_modified ):
-                    print(f"Skipped loading {file_path}")
-                    continue
-                else:
-                    self.files_collection.delete(where={"filename_hash": file_hash})
+        if saved_files:
+            self.persist_db()
 
-                print(f"Creating File Embeddings for: {file_path}...",end='',flush=True)
-
-
-                try:
-                    if os.path.splitext(file_path)[1] == '.pdf':
-                        loader = PyPDFLoader(file_path)
-                        pages = loader.load_and_split()
-                        content = []
-                        for page in pages:
-                            content.append(str(page.page_content))
-                        chunks = splitter.split_text(self.join_strings(content))
-                    else:
-                        content = file.read()
-                        chunks = splitter.split_text(content)
-                except Exception as e:
-                    print(f"Error reading {file_path}...skipped")
-                    continue
-
-                print(f"[{len(chunks)} chunks]",end='',flush=True)
-                index = 1
-                for chunk in chunks:
-                    record_id = f"{file_hash}-{index}"
-
-                    embedding_vector = self.embeddings_model.embed_query(chunk)
-                    self.files_collection.upsert(
-                        embeddings=embedding_vector,
-                        documents=chunk,
-                        metadatas={"source": file_path, "modified": file_modified, "filename_hash": file_hash},
-                        ids=record_id
-                    )
-                    index +=1
-                    print(".",end='',flush=True)
-                print()
-
-        self.chromadb.persist()
-
-        return True
+        return saved_files
 
     def ask(self, query):
         llm = ChatOpenAI(temperature=0.7,model=self.openai_model)
@@ -186,9 +257,6 @@ class AskMyFiles:
         answer_chain = LLMChain(llm=llm, prompt=prompt_template)
         answer = answer_chain.run(info=self.query_db(query),text=query)
         print(answer)
-
-
-import sys
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
