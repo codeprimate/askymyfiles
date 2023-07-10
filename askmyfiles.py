@@ -21,10 +21,12 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 class AskMyFiles:
     def __init__(self, filename=None):
         self.filename = filename
-        self.db_path = os.path.join(os.getcwd(), '.vectordatadb')
+        self.db_folder = '.vectordatadb'
+        self.db_path = os.path.join(os.getcwd(), self.db_folder)
         self.relative_working_path = self.db_path + "/../"
         if filename is None:
             self.working_path = os.getcwd()
+            self.recurse = True
         else:
             if os.path.isdir(filename):
                 self.working_path = os.path.abspath(filename)
@@ -90,12 +92,14 @@ class AskMyFiles:
             return [relative_file_path]
 
         ignore_files = []
-        gitignore_path = os.path.join(self.working_path, ".gitignore")
-        if os.path.exists(gitignore_path):
-            print("Using .gitignore")
-            with open(gitignore_path, "r") as file:
+        askignore_path = os.path.join(self.working_path, ".askignore")
+        if os.path.exists(askignore_path):
+            print("(Using .askignore)")
+            with open(askignore_path, "r") as file:
                 ignore_files = file.read().splitlines()
-        use_ignore = len(ignore_files) == 0
+        ignore_files.append(self.db_folder)
+        use_ignore = len(ignore_files) != 0
+
         file_list = []
         for root, dirs, files in os.walk(self.working_path):
             for file in files:
@@ -105,7 +109,7 @@ class AskMyFiles:
                     file_list.append(relative_file_path)
                     continue
 
-                if not any(re.search(re.compile(ignore_file), relative_file_path) for ignore_file in ignore_files):
+                if not any(re.search(re.compile(ignore_file.strip()), relative_file_path) for ignore_file in ignore_files):
                     file_list.append(relative_file_path)
         return file_list
 
@@ -234,7 +238,8 @@ class AskMyFiles:
         print("Updating AskMyFiles database...")
         saved_files = False
         for file_path in self.get_file_list():
-            saved_files = saved_files or self.process_file(file_path)
+            file_saved = self.process_file(file_path)
+            saved_files = file_saved or saved_files
 
         if saved_files:
             self.persist_db()

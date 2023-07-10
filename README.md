@@ -26,9 +26,9 @@ chmod u+x ~/bin/askmyfiles
 
 Always run askmyfiles at the root of your project folder!!!
 
-askmyfiles looks for new and updated information
+askmyfiles looks for new and updated information.
 
-Adding a file can take a long time
+Add a list of files or directories to ignore in `.askignore` (Like a `.gitignore`).
 
 To add a directory or file to the local database, then "add":
 
@@ -73,8 +73,6 @@ All file paths are relative. Drop your database anywhere.
 
 # TODO
 
-- Resume failed add's
-- Threading
 - oobabooga integration!
 - Add URLs
 - STDIN
