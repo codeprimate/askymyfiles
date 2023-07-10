@@ -37,14 +37,17 @@ class AskMyFiles:
                 self.working_path = os.path.dirname(os.path.abspath(filename))
                 self.recurse = False
 
+        self.askhints_file = ".askmyfileshints"
+        self.askhints_path = f"{self.relative_working_path}{self.askhints_file}"
         self.collection_name = "filedata"
         self.chromadb = None
         self.api_key = os.getenv('OPENAI_API_KEY')
         self.embeddings_model = OpenAIEmbeddings(openai_api_key=self.api_key)
 
         self.max_tokens = 14000
-        self.max_chars = 60000
+        self.max_chars = 50000
         self.openai_model = "gpt-3.5-turbo-16k"
+        self.model_temperature = 0.7
         self.chunk_size = 500
         self.chunk_overlap = 50
 
@@ -74,20 +77,28 @@ class AskMyFiles:
         result = ''
         for item in lst:
             if isinstance(item, list):
-                result += self.join_strings(item) + '\n'
+                result += self.join_strings(item) + '\n\n\n'
             else:
-                result += item + '\n'
+                result += item + '\n\n\n'
         return result.strip()
 
+    def process_query_result(self, documents):
+        output = []
+        max_chars = self.max_chars
+        doc_count = len(documents['metadatas'][0])
+        references = [documents['metadatas'][0][index]['source'] for index in range(doc_count - 1)]
+        for index in range(0, doc_count - 1):
+            output.append(f"""### Start Excerpt from file source {documents['metadatas'][0][index]['source']}
+{documents['documents'][0][index]}
+### End Excerpt from file source {documents['metadatas'][0][index]['source']}""")
+        return [references, self.join_strings(output)[:max_chars]]
+
     def query_db(self, string, max_chars=None):
-        max_results = 100
-        if max_chars == None:
-            max_chars = self.max_chars
+        max_results = 50
         self.load_db()
         query_embedding = self.embeddings_model.embed_query(string)
         result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
-        out = self.join_strings(result['documents'])[:max_chars]
-        return out
+        return self.process_query_result(result)
 
     def get_ignore_list(self):
         ignore_files = []
@@ -127,7 +138,8 @@ class AskMyFiles:
     def remove_file(self,file_name):
         self.load_db()
         found_files = self.files_collection.get(where={"source": file_name})
-        if found_files == None:
+        existing = len(found_files['ids']) != 0 and len(found_files['metadatas']) != 0
+        if not existing:
             print("File not found in database.")
             return
         found_files = self.files_collection.delete(where={"source": file_name})
@@ -307,8 +319,15 @@ class AskMyFiles:
 
         return saved_files
 
+    def get_hints(self):
+        if os.path.exists(self.askhints_path):
+            with open(self.askhints_path, "r") as file:
+                return file.read()
+        else:
+            return ''
+
     def ask(self, query):
-        llm = ChatOpenAI(temperature=0.7,model=self.openai_model)
+        llm = ChatOpenAI(temperature=self.model_temperature,model=self.openai_model)
         template = """Important Knowledge from My askmyfiles Library:
         BEGIN Important Knowledge
         {info}.
@@ -316,13 +335,18 @@ class AskMyFiles:
 
         Consider My askmyfiles Library when you answer my question.
 
-        Question: {text}
-        Answer:
+        {hints}
+
+        ### Question: {text}
+        ### Answer:
         """
-        prompt_template = PromptTemplate(input_variables=["text","info"], template=template)
+        prompt_template = PromptTemplate(input_variables=["text","info","hints"], template=template)
         answer_chain = LLMChain(llm=llm, prompt=prompt_template)
-        answer = answer_chain.run(info=self.query_db(query),text=query)
+        local_query_result = self.query_db(query)
+        answer = answer_chain.run(info=local_query_result[1],hints=self.get_hints(),text=query)
         print(answer)
+        print("\n\nSources:")
+        print(" *", "\n * ".join(list(set(local_query_result[0]))))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -356,8 +380,6 @@ if __name__ == "__main__":
             service = AskMyFiles()
             service.add_webpage(url)
             sys.exit()
-
-        sys.exit()
 
         service = AskMyFiles()
         query = ''.join(sys.argv[1:])
