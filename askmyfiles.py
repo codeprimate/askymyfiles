@@ -107,12 +107,13 @@ class AskMyFiles:
         image_formats = [ 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'tiff', 'ico', 'webp', 'svg', 'eps', 'raw', 'cr2', 'nef', 'orf', 'sr2', 'heif', 'bat', 'jpe', 'jfif', 'jif', 'jfi' ]
         ignore_files += [f"/*.{ext}" for ext in image_formats]
 
-        askignore_path = os.path.join(self.working_path, ".askignore")
+        askignore_path = os.path.join(self.relative_working_path, ".askignore")
         if os.path.exists(askignore_path):
             with open(askignore_path, "r") as file:
                 ignore_files = file.read().splitlines()
 
-        return list(set(ignore_files))
+        print("(Using .askignore)")
+        return list(set([ignore_file.strip() for ignore_file in ignore_files if ignore_file.strip() != '']))
 
     def get_file_list(self):
         if not self.recurse:
@@ -137,14 +138,38 @@ class AskMyFiles:
 
     def remove_file(self,file_name):
         self.load_db()
-        found_files = self.files_collection.get(where={"source": file_name})
-        existing = len(found_files['ids']) != 0 and len(found_files['metadatas']) != 0
-        if not existing:
+        file_list = []
+        if os.path.isdir(file_name):
+            print(f"Removing all files in {file_name} from database...")
+            for root, dirs, files in os.walk(file_name):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    relative_file_path = os.path.relpath(file_path, self.relative_working_path)
+                    file_list.append(relative_file_path)
+        else:
+            file_list = [file_name]
+
+        found_ids = []
+        files_for_deletion = []
+        for file_path in file_list:
+            found_file = self.files_collection.get(where={"source": file_path},include=['metadatas'])
+            found_count = len(found_file['ids'])
+            if found_count > 0:
+                found_ids += found_file['ids']
+                files_for_deletion += [found_file['metadatas'][index]['source'] for index in range(found_count) ]
+
+        found_ids = list(set(found_ids))
+        files_for_deletion = list(set(files_for_deletion))
+
+        if found_ids == []:
             print("File not found in database.")
             return
-        found_files = self.files_collection.delete(where={"source": file_name})
-        print(f"Removed {file_name} from database.")
+
+        print("Removing the following files from the database:")
+        print(" - " + "\n - ".join(files_for_deletion))
+        self.files_collection.delete(ids=found_ids)
         self.persist_db()
+
         return True
 
     def vectorize_text(self, text):
@@ -195,7 +220,8 @@ class AskMyFiles:
                     # Plain Text Processing
                     return file.read()
             except Exception as e:
-                print(f"Error reading {file_path}...skipped")
+                print(f"Error reading {file_path}...[Skipped]")
+                print
                 return None
 
     def save_vectorized_chunks(self, vectorized_chunks, group_size=10):
@@ -281,13 +307,16 @@ class AskMyFiles:
         # Skip File?
         skip_file = existing and not file_updated
         if skip_file:
-            print(f"Skipped loading {file_path}")
             return False
 
         print(f"Creating File Embeddings for: {file_path}...",end='',flush=True)
 
         # Read content and split
         content = self.read_file(file_path)
+        if len(content) < 10 and content.strip() == '':
+            print(f"[EMPTY]", flush=True)
+            return False
+
         chunks = self.split_text(content)
         chunk_count = len(chunks)
         print(f"[{len(chunks)} chunks]",end='',flush=True)
@@ -296,6 +325,7 @@ class AskMyFiles:
         vectorized_chunks = self.vectorize_chunks(chunks, metadata)
         self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
         self.save_vectorized_chunks(vectorized_chunks)
+        self.persist_db()
 
         # Print status
         elapsed_time = max(1, int( time.time() - start_time ))
