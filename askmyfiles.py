@@ -135,11 +135,9 @@ class AskMyFiles:
     def vectorize_chunks(self, chunks, metadata):
         max_threads = min(len(chunks), 5)
         vectorized_chunks = {}
-        # for index in range(1,len(chunks)):
-        #     vectorized_chunks[str(index)] = self.vectorize_chunk(chunks[index-1], metadata, index)
-
         cindex = 1
         iterator = iter(chunks)
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
             for chunk_group in zip(*[iterator] * max_threads):
                 starting_index = cindex
@@ -177,6 +175,29 @@ class AskMyFiles:
                 print(f"Error reading {file_path}...skipped")
                 return None
 
+    def save_vectorized_chunks(self, vectorized_chunks, group_size=10):
+        chunk_keys = list(vectorized_chunks.keys())
+        if len(chunk_keys) == 0:
+            return False
+
+        batches = [chunk_keys[i:i+group_size] for i in range(0, len(chunk_keys), group_size)]
+
+        chunk_keys = list(vectorized_chunks.keys())
+        for batch in batches:
+            self.files_collection.add(
+                ids=[vectorized_chunks[cid]['id'] for cid in batch],
+                embeddings=[vectorized_chunks[cid]['embedding'] for cid in batch],
+                documents=[vectorized_chunks[cid]['document'] for cid in batch],
+                metadatas=[vectorized_chunks[cid]['metadata'] for cid in batch]
+            )
+            print("+", end='', flush=True)
+
+        return True
+
+    def split_text(self, content):
+        splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+        return splitter.split_text(content)
+
     def process_file(self,file_path):
         self.load_db()
         start_time = time.time()
@@ -205,30 +226,18 @@ class AskMyFiles:
 
         print(f"Creating File Embeddings for: {file_path}...",end='',flush=True)
 
-        splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+        # Read content and split
         content = self.read_file(file_path)
-        chunks = splitter.split_text(content)
+        chunks = self.split_text(content)
         chunk_count = len(chunks)
         print(f"[{len(chunks)} chunks]",end='',flush=True)
 
+        # Vectorize Chunks
         vectorized_chunks = self.vectorize_chunks(chunks, metadata)
-        chunk_keys = list(vectorized_chunks.keys())
-        if len(chunk_keys) == 0:
-            print("Processing Error...NO CHUNKS???")
-            return False
-
         self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
-        group_size = 10
-        batches = [chunk_keys[i:i+group_size] for i in range(0, len(chunk_keys), group_size)]
-        for batch in batches:
-            self.files_collection.add(
-                ids=[vectorized_chunks[cid]['id'] for cid in batch],
-                embeddings=[vectorized_chunks[cid]['embedding'] for cid in batch],
-                documents=[vectorized_chunks[cid]['document'] for cid in batch],
-                metadatas=[vectorized_chunks[cid]['metadata'] for cid in batch]
-            )
-            print("+", end='', flush=True)
+        self.save_vectorized_chunks(vectorized_chunks)
 
+        # Print status
         elapsed_time = max(1, int( time.time() - start_time ))
         print(f"OK [{elapsed_time}s]", flush=True)
 
@@ -241,6 +250,7 @@ class AskMyFiles:
             try:
                 file_saved = self.process_file(file_path)
             except:
+                print("Processing Error!")
                 file_saved = False
             saved_files = file_saved or saved_files
 
