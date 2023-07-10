@@ -29,6 +29,7 @@ Always run askmyfiles at the root of your project folder!!!
 askmyfiles looks for new and updated information.
 
 Add a list of files or directories to ignore in `.askignore` (Like a `.gitignore`).
+Add a list of hints/instructions for chat in `.askmyfileshints`
 
 To add a directory or file to the local database, then "add":
 
