@@ -2,4 +2,4 @@ chromadb
 langchain[llms]
 openai
 pypdf
-venv
+beautifulsoup4

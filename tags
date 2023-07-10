@@ -6,7 +6,7 @@
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 AskMyFiles	./askmyfiles.py	/^class AskMyFiles:$/;"	c
 __init__	./askmyfiles.py	/^    def __init__(self, filename=None):$/;"	m	class:AskMyFiles
-add_url	./askmyfiles.py	/^    def add_url(self, url):$/;"	m	class:AskMyFiles
+add_webpage	./askmyfiles.py	/^    def add_webpage(self, url):$/;"	m	class:AskMyFiles
 ask	./askmyfiles.py	/^    def ask(self, query):$/;"	m	class:AskMyFiles
 file_info	./askmyfiles.py	/^    def file_info(self,filename):$/;"	m	class:AskMyFiles
 get_file_list	./askmyfiles.py	/^    def get_file_list(self):$/;"	m	class:AskMyFiles

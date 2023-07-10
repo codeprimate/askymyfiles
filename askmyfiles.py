@@ -7,6 +7,8 @@ import time
 import concurrent.futures
 import hashlib
 from itertools import islice
+import requests
+from bs4 import BeautifulSoup
 import chromadb
 from chromadb.config import Settings
 from langchain.chains import LLMChain
@@ -198,9 +200,46 @@ class AskMyFiles:
         splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
         return splitter.split_text(content)
 
-    def process_file(self,file_path):
-        self.load_db()
+    def add_webpage(self, url):
         start_time = time.time()
+        self.load_db()
+
+        metadata = {
+            "source": url,
+            "file_path": url,
+            "file_modified": time.time(),
+            "file_hash": hashlib.sha256(url.encode()).hexdigest()
+        }
+
+        print(f"Fetching '{url}'...",end='',flush=True)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.google.com/'
+        }
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            content = soup.get_text()
+        else:
+            print(f"[Failed: {response.status_code}]")
+            return False
+
+        print(f"Creating embeddings...",end='',flush=True)
+        chunks = self.split_text(content)
+        chunk_count = len(chunks)
+        print(f"[{len(chunks)} chunks]",end='',flush=True)
+        vectorized_chunks = self.vectorize_chunks(chunks, metadata)
+        self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
+        self.save_vectorized_chunks(vectorized_chunks)
+
+        elapsed_time = max(1, int( time.time() - start_time ))
+        print(f"OK [{elapsed_time}s]", flush=True)
+
+    def process_file(self,file_path):
+        start_time = time.time()
+        self.load_db()
 
         # Get file meta information
         metadata = {
@@ -278,24 +317,27 @@ class AskMyFiles:
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        case = sys.argv[1]
-        if case == "ask":
+        command = sys.argv[1]
+        if command == "ask":
             query = sys.argv[2]
             service = AskMyFiles()
             service.ask(query)
             pass
-        if case == "add":
-            dirname = sys.argv[2]
-            service = AskMyFiles(dirname)
+        if command == "add":
+            path = sys.argv[2]
+            service = AskMyFiles(path)
             service.load_files()
-        if case == "remove":
-            dirname = sys.argv[2]
+        if command == "remove":
+            path = sys.argv[2]
             service = AskMyFiles()
-            service.remove_file(dirname)
-        if case == "info":
-            dirname = sys.argv[2]
+            service.remove_file(path)
+        if command == "info":
+            path = sys.argv[2]
             service = AskMyFiles()
-            service.file_info(dirname)
-
+            service.file_info(path)
+        if command == "add_webpage":
+            url = sys.argv[2]
+            service = AskMyFiles()
+            service.add_webpage(url)
     else:
         print("askymfiles ask 'question' or askmyfiles add 'path/dir'")

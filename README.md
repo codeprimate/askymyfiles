@@ -43,19 +43,26 @@ touch the/path/to/file.txt
 ~/bin/askymyfiles add the/path/to/file.txt
 ```
 
+To add a webpage to the local database, then "add_webpage":
+
+```
+~/bin/askymyfiles add_webpage "https://www.example.com/example.html"
+```
+
 To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 
 ```
 ~/bin/askmyfiles ask "Your question."
 ```
 
-To remove a file from the database, then "remove":
+To remove a file or URL from the database, then "remove":
 
 ```
-# Specify a single file to remove 
+# Specify a single resource to remove 
 # Also useful when adding fails
 ~/bin/askymyfiles remove the/path/to/file.txt
 ~/bin/askymyfiles remove /really/the/path/to/file.txt
+~/bin/askymyfiles remove "https://www.example.com/example.html"
 ```
 
 Once the file is loaded into the database, you don't NEED it in the project directory anymore.
