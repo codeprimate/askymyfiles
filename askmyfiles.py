@@ -80,11 +80,12 @@ class AskMyFiles:
         return result.strip()
 
     def query_db(self, string, max_chars=None):
+        max_results = 100
         if max_chars == None:
             max_chars = self.max_chars
         self.load_db()
         query_embedding = self.embeddings_model.embed_query(string)
-        result = self.files_collection.query(query_embeddings=[query_embedding],n_results=100,include=['documents','metadatas'])
+        result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
         out = self.join_strings(result['documents'])[:max_chars]
         return out
 
@@ -330,22 +331,36 @@ if __name__ == "__main__":
             query = sys.argv[2]
             service = AskMyFiles()
             service.ask(query)
-            pass
+            exit
+
         if command == "add":
             path = sys.argv[2]
             service = AskMyFiles(path)
             service.load_files()
+            exit
+
         if command == "remove":
             path = sys.argv[2]
             service = AskMyFiles()
             service.remove_file(path)
+            exit
+
         if command == "info":
             path = sys.argv[2]
             service = AskMyFiles()
             service.file_info(path)
+            exit
+
         if command == "add_webpage":
             url = sys.argv[2]
             service = AskMyFiles()
             service.add_webpage(url)
+            exit
+
+        service = AskMyFiles()
+        query = ''.join(sys.argv[1:])
+        service.ask(query)
+        exit
+
     else:
         print("askymfiles ask 'question' or askmyfiles add 'path/dir'")

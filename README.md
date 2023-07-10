@@ -53,6 +53,7 @@ To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 
 ```
 ~/bin/askmyfiles ask "Your question."
+~/bin/askmyfiles "Your question"
 ```
 
 To remove a file or URL from the database, then "remove":
