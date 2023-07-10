@@ -238,7 +238,10 @@ class AskMyFiles:
         print("Updating AskMyFiles database...")
         saved_files = False
         for file_path in self.get_file_list():
-            file_saved = self.process_file(file_path)
+            try:
+                file_saved = self.process_file(file_path)
+            except:
+                file_saved = False
             saved_files = file_saved or saved_files
 
         if saved_files:
