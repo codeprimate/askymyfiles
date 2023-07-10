@@ -3,4 +3,3 @@ langchain[llms]
 openai
 pypdf
 beautifulsoup4
-venv
