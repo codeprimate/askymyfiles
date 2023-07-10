@@ -331,36 +331,38 @@ if __name__ == "__main__":
             query = sys.argv[2]
             service = AskMyFiles()
             service.ask(query)
-            exit
+            sys.exit()
 
         if command == "add":
             path = sys.argv[2]
             service = AskMyFiles(path)
             service.load_files()
-            exit
+            sys.exit()
 
         if command == "remove":
             path = sys.argv[2]
             service = AskMyFiles()
             service.remove_file(path)
-            exit
+            sys.exit()
 
         if command == "info":
             path = sys.argv[2]
             service = AskMyFiles()
             service.file_info(path)
-            exit
+            sys.exit()
 
         if command == "add_webpage":
             url = sys.argv[2]
             service = AskMyFiles()
             service.add_webpage(url)
-            exit
+            sys.exit()
+
+        sys.exit()
 
         service = AskMyFiles()
         query = ''.join(sys.argv[1:])
         service.ask(query)
-        exit
+        sys.exit()
 
     else:
         print("askymfiles ask 'question' or askmyfiles add 'path/dir'")
