@@ -309,12 +309,12 @@ class AskMyFiles:
 
     def ask(self, query):
         llm = ChatOpenAI(temperature=0.7,model=self.openai_model)
-        template = """Important Knowledge from My Library:
+        template = """Important Knowledge from My askmyfiles Library:
         BEGIN Important Knowledge
         {info}.
         END Important Knowledge
 
-        Consider My Library when you answer my question.
+        Consider My askmyfiles Library when you answer my question.
 
         Question: {text}
         Answer:
@@ -365,4 +365,4 @@ if __name__ == "__main__":
         sys.exit()
 
     else:
-        print("askymfiles ask 'question' or askmyfiles add 'path/dir'")
+        print("askmyfiles ask 'question' or askmyfiles add 'path/dir'")
