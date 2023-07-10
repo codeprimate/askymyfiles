@@ -88,18 +88,26 @@ class AskMyFiles:
         out = self.join_strings(result['documents'])[:max_chars]
         return out
 
+    def get_ignore_list(self):
+        ignore_files = []
+
+        ignore_files.append(self.db_folder)
+        image_formats = [ 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'tiff', 'ico', 'webp', 'svg', 'eps', 'raw', 'cr2', 'nef', 'orf', 'sr2', 'heif', 'bat', 'jpe', 'jfif', 'jif', 'jfi' ]
+        ignore_files += [f"/*.{ext}" for ext in image_formats]
+
+        askignore_path = os.path.join(self.working_path, ".askignore")
+        if os.path.exists(askignore_path):
+            with open(askignore_path, "r") as file:
+                ignore_files = file.read().splitlines()
+
+        return list(set(ignore_files))
+
     def get_file_list(self):
         if not self.recurse:
             relative_file_path = os.path.relpath(self.filename, self.relative_working_path)
             return [relative_file_path]
 
-        ignore_files = []
-        askignore_path = os.path.join(self.working_path, ".askignore")
-        if os.path.exists(askignore_path):
-            print("(Using .askignore)")
-            with open(askignore_path, "r") as file:
-                ignore_files = file.read().splitlines()
-        ignore_files.append(self.db_folder)
+        ignore_files = self.get_ignore_list()
         use_ignore = len(ignore_files) != 0
 
         file_list = []
@@ -235,7 +243,7 @@ class AskMyFiles:
         self.save_vectorized_chunks(vectorized_chunks)
 
         elapsed_time = max(1, int( time.time() - start_time ))
-        print(f"OK [{elapsed_time}s]", flush=True)
+        print(f"[OK] [{elapsed_time}s]", flush=True)
 
     def process_file(self,file_path):
         start_time = time.time()
@@ -278,7 +286,7 @@ class AskMyFiles:
 
         # Print status
         elapsed_time = max(1, int( time.time() - start_time ))
-        print(f"OK [{elapsed_time}s]", flush=True)
+        print(f"[OK] [{elapsed_time}s]", flush=True)
 
         return True
 
