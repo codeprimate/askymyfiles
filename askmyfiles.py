@@ -93,8 +93,9 @@ class AskMyFiles:
 ### End Excerpt from file source {documents['metadatas'][0][index]['source']}""")
         return [references, self.join_strings(output)[:max_chars]]
 
-    def query_db(self, string):
-        max_results = 100
+    def query_db(self, string ):
+        max_results = 50
+
         self.load_db()
         query_embedding = self.embeddings_model.embed_query(string)
         result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
