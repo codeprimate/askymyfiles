@@ -47,7 +47,7 @@ class AskMyFiles:
         self.max_tokens = 14000
         self.max_chars = 50000
         self.openai_model = "gpt-3.5-turbo-16k"
-        self.model_temperature = 0.7
+        self.model_temperature = 0.6
         self.chunk_size = 500
         self.chunk_overlap = 50
 
@@ -94,7 +94,7 @@ class AskMyFiles:
         return [references, self.join_strings(output)[:max_chars]]
 
     def query_db(self, string, max_chars=None):
-        max_results = 50
+        max_results = 100
         self.load_db()
         query_embedding = self.embeddings_model.embed_query(string)
         result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
@@ -358,23 +358,61 @@ class AskMyFiles:
 
     def ask(self, query):
         llm = ChatOpenAI(temperature=self.model_temperature,model=self.openai_model)
-        template = """Important Knowledge from My askmyfiles Library:
+
+        # First Pass
+        template = """
+        [
+        Important Knowledge from MyAskmyfilesLibrary:
         BEGIN Important Knowledge
-        {info}.
+        {excerpts}
         END Important Knowledge
+        ]
 
-        Consider My askmyfiles Library when you answer my question.
-
+        [
         {hints}
+        ]
+
+        [
+        Start with and prioritize knowledge from My askmyfiles Library when you answer my question.
+        Answer in a very detailed manner when possible.
+        If the question is regarding code: prefer to answer using service objects and other abstractions already defined in MyAskmyfilesLibrary and follow similar coding conventions.
+        If the question is regarding code: identify if there is a tags file present to inform your answers about modules, classes, and methods.
+        ]
 
         ### Question: {text}
         ### Answer:
         """
-        prompt_template = PromptTemplate(input_variables=["text","info","hints"], template=template)
+
+        prompt_template = PromptTemplate(input_variables=["text","excerpts","hints"], template=template)
         answer_chain = LLMChain(llm=llm, prompt=prompt_template)
+        print("...THINKING...", end='', flush=True)
         local_query_result = self.query_db(query)
-        answer = answer_chain.run(info=local_query_result[1],hints=self.get_hints(),text=query)
-        print(answer)
+        first_answer = answer_chain.run(excerpts=local_query_result[1],hints=self.get_hints(),text=query)
+
+        # Second Pass
+        index = first_answer.find("Sources:")
+        sources = ""
+        if index != -1:
+            sources = text[index + len("Sources:"):]
+
+        second_pass_query = f"""
+        [
+        Consider the following first question and answer:
+        Question: {query}
+        Answer: {first_answer}
+        ]
+
+        Reconsider the first Question and Answer to answer the following question:
+        {query}
+        """
+
+        print("THINKING MORE...", end='', flush=True)
+        local_query_result2 = self.query_db(second_pass_query)
+        second_answer = answer_chain.run(excerpts=local_query_result2[1],hints=self.get_hints(),text=second_pass_query)
+
+        # Output
+        print("\n=====================================================")
+        print(second_answer)
         print("\n\nSources:")
         print(" *", "\n * ".join(list(set(local_query_result[0]))))
 
