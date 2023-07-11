@@ -57,6 +57,11 @@ To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 ~/bin/askmyfiles "Your question"
 ```
 
+### Note
+ - Results are not perfect or deterministic.
+ - Hallucinations can and will occur so ask the question more than once
+ - Do some prompt engineering as needed to tease the information you want out of your data.
+
 To remove a file or URL from the database, then "remove":
 
 ```
@@ -64,13 +69,12 @@ To remove a file or URL from the database, then "remove":
 # Also useful when adding fails
 ~/bin/askymyfiles remove the/path/to/file.txt
 ~/bin/askymyfiles remove /really/the/path/to/file.txt
+~/bin/askymyfiles remove the/path
 ~/bin/askymyfiles remove "https://www.example.com/example.html"
 ```
 
 Once the file is loaded into the database, you don't NEED it in the project directory anymore.
 
-Please note that the app will only return the code snippet relevant to your question and nothing else.
-API usage fees will apply.
 
 ### Back it Up
 
