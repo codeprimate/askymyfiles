@@ -95,6 +95,7 @@ class AskMyFiles:
 
     def query_db(self, string ):
         max_results = 50
+
         self.load_db()
         query_embedding = self.embeddings_model.embed_query(string)
         result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
@@ -275,7 +276,6 @@ class AskMyFiles:
 
         print(f"Creating embeddings...",end='',flush=True)
         chunks = self.split_text(content)
-        chunk_count = len(chunks)
         print(f"[{len(chunks)} chunks]",end='',flush=True)
         vectorized_chunks = self.vectorize_chunks(chunks, metadata)
         self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
@@ -371,8 +371,9 @@ class AskMyFiles:
         [
         Start with and prioritize knowledge from My askmyfiles Library when you answer my question.
         Answer in a very detailed manner when possible.
-        If the question is regarding code: prefer to answer using service objects and other abstractions already defined in MyAskmyfilesLibrary and follow similar coding conventions.
-        If the question is regarding code: identify if there is a tags file present to inform your answers about modules, classes, and methods.
+        If the question is regarding code: 
+            1. Try to answer using service objects and other abstractions already defined in MyAskmyfilesLibrary and follow similar coding conventions.
+            2. Identify if there is a tags file present to inform your answer about modules, classes, and methods.
         ]
 
         ### Question: {text}
@@ -391,6 +392,11 @@ class AskMyFiles:
         if index != -1:
             sources = text[index + len("Sources:"):]
 
+        second_pass_query_db = f"""
+        {query}
+        {first_answer}
+        """
+
         second_pass_query = f"""
         [
         Consider the following first question and answer:
@@ -403,7 +409,7 @@ class AskMyFiles:
         """
 
         print("THINKING MORE...", end='', flush=True)
-        local_query_result2 = self.query_db(second_pass_query)
+        local_query_result2 = self.query_db(second_pass_query_db)
         second_answer = answer_chain.run(excerpts=local_query_result2[1],hints=self.get_hints(),text=second_pass_query)
 
         # Output
