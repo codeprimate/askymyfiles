@@ -44,8 +44,8 @@ class AskMyFiles:
         self.api_key = os.getenv('OPENAI_API_KEY')
         self.embeddings_model = OpenAIEmbeddings(openai_api_key=self.api_key)
 
-        self.max_tokens = 14000
-        self.max_chars = 50000
+        self.max_tokens = 10000
+        self.max_chars = 25000
         self.openai_model = "gpt-3.5-turbo-16k"
         self.model_temperature = 0.6
         self.chunk_size = 500
