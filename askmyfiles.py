@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
+import chromadb
+import concurrent.futures
+import fnmatch
+import hashlib
 import os
 import re
+import requests
 import sys
 import time
-import concurrent.futures
-import hashlib
-from itertools import islice
-import requests
 from bs4 import BeautifulSoup
-import chromadb
 from chromadb.config import Settings
 from langchain.chains import LLMChain
 from langchain.chains import SimpleSequentialChain
@@ -90,7 +90,7 @@ class AskMyFiles:
             output.append(f"""### Start Excerpt from file source {documents['metadatas'][0][index]['source']}
 {documents['documents'][0][index]}
 ### End Excerpt from file source {documents['metadatas'][0][index]['source']}""")
-        
+
         return [references, self.join_strings(output)[:max_excerpt_chars]]
 
     def query_db(self, string ):
@@ -105,15 +105,16 @@ class AskMyFiles:
 
         ignore_files.append(self.db_folder)
         image_formats = [ 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'tiff', 'ico', 'webp', 'svg', 'eps', 'raw', 'cr2', 'nef', 'orf', 'sr2', 'heif', 'bat', 'jpe', 'jfif', 'jif', 'jfi' ]
-        ignore_files += [f"/*.{ext}" for ext in image_formats]
+        for ext in image_formats:
+            ignore_files.append(f"/*.{ext}")
 
         askignore_path = os.path.join(self.relative_working_path, ".askignore")
         if os.path.exists(askignore_path):
             with open(askignore_path, "r") as file:
-                ignore_files = file.read().splitlines()
+                for line in file.read().splitlines():
+                    ignore_files.append(line.strip())
 
-        print("(Using .askignore)")
-        return list(set([ignore_file.strip() for ignore_file in ignore_files if ignore_file.strip() != '']))
+        return ignore_files
 
     def get_file_list(self):
         if not self.recurse:
@@ -121,19 +122,21 @@ class AskMyFiles:
             return [relative_file_path]
 
         ignore_files = self.get_ignore_list()
-        use_ignore = len(ignore_files) != 0
+        use_ignore = len(ignore_files) > 0
 
         file_list = []
         for root, dirs, files in os.walk(self.working_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 relative_file_path = os.path.relpath(file_path, self.relative_working_path)
+
                 if not use_ignore:
                     file_list.append(relative_file_path)
                     continue
 
-                if not any(re.search(re.compile(ignore_file.strip()), relative_file_path) for ignore_file in ignore_files):
-                    file_list.append(relative_file_path)
+                if not any(pattern == file_path or pattern in file_path or fnmatch.fnmatch(file_path, pattern) for pattern in ignore_files):
+                    file_list.append(file_path)
+
         return file_list
 
     def remove_file(self,file_name):
