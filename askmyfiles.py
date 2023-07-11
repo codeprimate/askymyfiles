@@ -45,7 +45,7 @@ class AskMyFiles:
         self.embeddings_model = OpenAIEmbeddings(openai_api_key=self.api_key)
 
         self.max_tokens = 10000
-        self.max_chars = 25000
+        self.max_excerpt_chars = 25000
         self.openai_model = "gpt-3.5-turbo-16k"
         self.model_temperature = 0.6
         self.chunk_size = 500
@@ -84,14 +84,15 @@ class AskMyFiles:
 
     def process_query_result(self, documents):
         output = []
-        max_chars = self.max_chars
+        max_excerpt_chars = self.max_excerpt_chars
         doc_count = len(documents['metadatas'][0])
         references = [documents['metadatas'][0][index]['source'] for index in range(doc_count - 1)]
         for index in range(0, doc_count - 1):
             output.append(f"""### Start Excerpt from file source {documents['metadatas'][0][index]['source']}
 {documents['documents'][0][index]}
 ### End Excerpt from file source {documents['metadatas'][0][index]['source']}""")
-        return [references, self.join_strings(output)[:max_chars]]
+        
+        return [references, self.join_strings(output)[:max_excerpt_chars]]
 
     def query_db(self, string ):
         max_results = 50
