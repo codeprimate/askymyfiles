@@ -38,6 +38,7 @@ class AskMyFiles:
                 self.recurse = False
 
         self.askhints_file = ".askmyfileshints"
+        self.askignore_file = ".askignore"
         self.askhints_path = f"{self.relative_working_path}{self.askhints_file}"
         self.collection_name = "filedata"
         self.chromadb = None
@@ -104,11 +105,12 @@ class AskMyFiles:
         ignore_files = []
 
         ignore_files.append(self.db_folder)
+        ignore_files.append('.git')
         image_formats = [ 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'tiff', 'ico', 'webp', 'svg', 'eps', 'raw', 'cr2', 'nef', 'orf', 'sr2', 'heif', 'bat', 'jpe', 'jfif', 'jif', 'jfi' ]
         for ext in image_formats:
             ignore_files.append(f"/*.{ext}")
 
-        askignore_path = os.path.join(self.relative_working_path, ".askignore")
+        askignore_path = os.path.join(self.relative_working_path, self.askignore_file)
         if os.path.exists(askignore_path):
             with open(askignore_path, "r") as file:
                 for line in file.read().splitlines():
