@@ -343,9 +343,6 @@ class AskMyFiles:
                 file_saved = False
             saved_files = file_saved or saved_files
 
-        if saved_files:
-            self.persist_db()
-
         return saved_files
 
     def get_hints(self):
