@@ -135,7 +135,7 @@ class AskMyFiles:
                     continue
 
                 if not any(pattern == file_path or pattern in file_path or fnmatch.fnmatch(file_path, pattern) for pattern in ignore_files):
-                    file_list.append(file_path)
+                    file_list.append(relative_file_path)
 
         return file_list
 
