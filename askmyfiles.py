@@ -442,6 +442,11 @@ if __name__ == "__main__":
 
         if command == "add":
             path = sys.argv[2]
+            if path.startswith('http'):
+                service = AskMyFiles()
+                service.add_webpage(path)
+                sys.exit()
+
             service = AskMyFiles(path)
             service.load_files()
             sys.exit()

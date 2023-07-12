@@ -31,13 +31,14 @@ askmyfiles looks for new and updated information.
 Add a list of files or directories to ignore in `.askignore` (Like a `.gitignore`).
 Add a list of hints/instructions for chat in `.askmyfileshints`
 
-To add a directory or file to the local database, then "add":
+To add a directory, file, or single webpage to the local database, then "add":
 
 ```
 ~/bin/askymyfiles add the/path/to/file.txt
 ~/bin/askymyfiles add /really/the/path/to/file.txt
 ~/bin/askymyfiles add the/path/
 ~/bin/askymyfiles add /really/the/path/
+~/bin/askymyfiles add https://www.example.com/file.html
 
 # if there is a failure/interruption touch the file and retry
 touch the/path/to/file.txt
