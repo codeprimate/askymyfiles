@@ -61,6 +61,13 @@ To ask a question using the gpt-3.5-turbo-16k model, then "ask":
  - Results are not perfect or deterministic.
  - Hallucinations can and will occur so ask the question more than once
  - Do some prompt engineering as needed to tease the information you want out of your data.
+ 
+
+To list all entries in the database, then "list":
+
+```
+~/bin/askmyfiles list
+```
 
 To remove a file or URL from the database, then "remove":
 

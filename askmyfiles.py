@@ -101,6 +101,20 @@ class AskMyFiles:
         result = self.files_collection.query(query_embeddings=[query_embedding],n_results=max_results,include=['documents','metadatas'])
         return self.process_query_result(result)
 
+    def list_files(self):
+        self.load_db()
+        results = self.files_collection.get(
+            where={"source": { "$ne": "FILELISTQUERYDUMMYCOMPARISON"}},
+            include=["metadatas"]
+        )
+
+        files = sorted(set([results['metadatas'][index]['source'] for index in range(len(results['metadatas']) - 1)]))
+
+        print("\n".join(files))
+
+        return True
+
+
     def get_ignore_list(self):
         ignore_files = []
 
@@ -448,6 +462,11 @@ if __name__ == "__main__":
             url = sys.argv[2]
             service = AskMyFiles()
             service.add_webpage(url)
+            sys.exit()
+
+        if command == "list":
+            service = AskMyFiles()
+            service.list_files()
             sys.exit()
 
         service = AskMyFiles()
