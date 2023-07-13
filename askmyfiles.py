@@ -428,8 +428,8 @@ class AskMyFiles:
         # Output
         print("\n=====================================================")
         print(second_answer)
-        print("\n\nSources:")
-        print(" *", "\n * ".join(list(set(local_query_result[0]))))
+        print("\n\n=Sources=")
+        print(" ".join(list(set(local_query_result[0]))))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
