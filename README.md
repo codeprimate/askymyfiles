@@ -58,6 +58,12 @@ To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 ~/bin/askmyfiles "Your question"
 ```
 
+You can also pipe queries to askmyfiles:
+
+```
+echo "What is the name of my app" | ~/bin/askmyfiles
+```
+
 ### Note
  - Results are not perfect or deterministic.
  - Hallucinations can and will occur so ask the question more than once

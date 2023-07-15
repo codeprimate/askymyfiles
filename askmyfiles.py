@@ -21,7 +21,7 @@ from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 class AskMyFiles:
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, using_stdin=False):
         self.filename = filename
         self.db_folder = '.vectordatadb'
         self.db_path = os.path.join(os.getcwd(), self.db_folder)
@@ -50,6 +50,7 @@ class AskMyFiles:
         self.model_temperature = 0.6
         self.chunk_size = 500
         self.chunk_overlap = 50
+        self.using_stdin = using_stdin
 
     def load_db(self):
         if self.chromadb is None:
@@ -400,7 +401,8 @@ class AskMyFiles:
 
         prompt_template = PromptTemplate(input_variables=["text","excerpts","hints"], template=template)
         answer_chain = LLMChain(llm=llm, prompt=prompt_template)
-        print("...THINKING...", end='', flush=True)
+        if not self.using_stdin:
+            print("...THINKING...", end='', flush=True)
         local_query_result = self.query_db(query)
         first_answer = answer_chain.run(excerpts=local_query_result[1],hints=self.get_hints(),text=query)
 
@@ -421,17 +423,26 @@ class AskMyFiles:
         {query}
         """
 
-        print("THINKING MORE...", end='', flush=True)
+        if not self.using_stdin:
+            print("THINKING MORE...", end='', flush=True)
         local_query_result2 = self.query_db(second_pass_query)
         second_answer = answer_chain.run(excerpts=local_query_result2[1],hints=self.get_hints(),text=second_pass_query)
 
         # Output
-        print("\n=====================================================")
+        if not self.using_stdin:
+            print("\n=====================================================")
         print(second_answer)
-        print("\n\n=Sources=")
-        print(" ".join(list(set(local_query_result[0]))))
+        if not self.using_stdin:
+            print("\n\n=Sources=")
+            print(" ".join(list(set(local_query_result[0]))))
 
 if __name__ == "__main__":
+    if not sys.stdin.isatty():
+        query = "\n".join(sys.stdin.readlines())
+        service = AskMyFiles(using_stdin=True)
+        service.ask(query)
+        sys.exit()
+
     if len(sys.argv) > 1:
         command = sys.argv[1]
         if command == "ask":
@@ -473,6 +484,7 @@ if __name__ == "__main__":
             service = AskMyFiles()
             service.list_files()
             sys.exit()
+
 
         service = AskMyFiles()
         query = ''.join(sys.argv[1:])

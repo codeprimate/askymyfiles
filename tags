@@ -5,17 +5,21 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 AskMyFiles	./askmyfiles.py	/^class AskMyFiles:$/;"	c
-__init__	./askmyfiles.py	/^    def __init__(self, filename=None):$/;"	m	class:AskMyFiles
+__init__	./askmyfiles.py	/^    def __init__(self, filename=None, using_stdin=False):$/;"	m	class:AskMyFiles
 add_webpage	./askmyfiles.py	/^    def add_webpage(self, url):$/;"	m	class:AskMyFiles
 ask	./askmyfiles.py	/^    def ask(self, query):$/;"	m	class:AskMyFiles
 file_info	./askmyfiles.py	/^    def file_info(self,filename):$/;"	m	class:AskMyFiles
 get_file_list	./askmyfiles.py	/^    def get_file_list(self):$/;"	m	class:AskMyFiles
+get_hints	./askmyfiles.py	/^    def get_hints(self):$/;"	m	class:AskMyFiles
+get_ignore_list	./askmyfiles.py	/^    def get_ignore_list(self):$/;"	m	class:AskMyFiles
 join_strings	./askmyfiles.py	/^    def join_strings(self,lst):$/;"	m	class:AskMyFiles
+list_files	./askmyfiles.py	/^    def list_files(self):$/;"	m	class:AskMyFiles
 load_db	./askmyfiles.py	/^    def load_db(self):$/;"	m	class:AskMyFiles
 load_files	./askmyfiles.py	/^    def load_files(self):$/;"	m	class:AskMyFiles
 persist_db	./askmyfiles.py	/^    def persist_db(self):$/;"	m	class:AskMyFiles
 process_file	./askmyfiles.py	/^    def process_file(self,file_path):$/;"	m	class:AskMyFiles
-query_db	./askmyfiles.py	/^    def query_db(self, string, max_chars=None):$/;"	m	class:AskMyFiles
+process_query_result	./askmyfiles.py	/^    def process_query_result(self, documents):$/;"	m	class:AskMyFiles
+query_db	./askmyfiles.py	/^    def query_db(self, string ):$/;"	m	class:AskMyFiles
 read_file	./askmyfiles.py	/^    def read_file(self, file_path):$/;"	m	class:AskMyFiles
 remove_file	./askmyfiles.py	/^    def remove_file(self,file_name):$/;"	m	class:AskMyFiles
 reset_db	./askmyfiles.py	/^    def reset_db(self):$/;"	m	class:AskMyFiles
