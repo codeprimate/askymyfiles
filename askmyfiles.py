@@ -260,6 +260,7 @@ class AskMyFiles:
                 metadatas=[vectorized_chunks[cid]['metadata'] for cid in batch]
             )
             print("+", end='', flush=True)
+        self.persist_db()
 
         return True
 
@@ -344,7 +345,6 @@ class AskMyFiles:
         vectorized_chunks = self.vectorize_chunks(chunks, metadata)
         self.files_collection.delete(where={"file_hash": metadata["file_hash"]})
         self.save_vectorized_chunks(vectorized_chunks)
-        self.persist_db()
 
         # Print status
         elapsed_time = max(1, int( time.time() - start_time ))
