@@ -45,12 +45,6 @@ touch the/path/to/file.txt
 ~/bin/askymyfiles add the/path/to/file.txt
 ```
 
-To add a webpage to the local database, then "add_webpage":
-
-```
-~/bin/askymyfiles add_webpage "https://www.example.com/example.html"
-```
-
 To ask a question using the gpt-3.5-turbo-16k model, then "ask":
 
 ```
