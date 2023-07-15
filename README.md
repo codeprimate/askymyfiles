@@ -95,5 +95,5 @@ All file paths are relative. Drop your database anywhere.
 # TODO
 
 - oobabooga integration!
-- Add URLs
 - STDIN
+- GitHub Issues integration (suggest root cause or solutions)
