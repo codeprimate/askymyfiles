@@ -417,6 +417,8 @@ class AskMyFiles:
         Consider the following first question and answer:
         Question: {query}
         Answer: {first_answer}
+
+        Sources: {sources}
         ]
 
         Reconsider the first Question and Answer to answer the following question:
