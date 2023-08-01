@@ -48,8 +48,8 @@ class AskMyFiles:
         self.max_excerpt_chars = 25000
         self.openai_model = "gpt-3.5-turbo-16k"
         self.model_temperature = 0.6
-        self.chunk_size = 500
-        self.chunk_overlap = 50
+        self.chunk_size = 1000
+        self.chunk_overlap = 100 
         self.using_stdin = using_stdin
 
     def load_db(self):
