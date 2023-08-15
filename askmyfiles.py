@@ -389,7 +389,7 @@ class AskMyFiles:
         ]
 
         [
-        Start with and prioritize knowledge from My askmyfiles Library when you answer my question.
+        Start with and prioritize knowledge from MyAskmyfilesLibrary when you answer my question.
         Answer in a very detailed manner when possible.
         If the question is regarding code: prefer to answer using service objects and other abstractions already defined in MyAskmyfilesLibrary and follow similar coding conventions.
         If the question is regarding code: identify if there is a tags file present to inform your answers about modules, classes, and methods.
